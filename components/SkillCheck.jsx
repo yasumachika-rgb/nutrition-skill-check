@@ -171,6 +171,33 @@ export default function SkillCheck() {
   const pageAnswered = answers.slice(page * 5, page * 5 + 5).every((v) => v !== null);
   const answeredCount = answers.filter((v) => v !== null).length;
 
+  const savedRef = useRef(false);
+  const saveResult = async () => {
+    if (savedRef.current) return; // 二重送信を防ぐ
+    savedRef.current = true;
+    try {
+      await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          score_assessment: scores[0],
+          score_communication: scores[1],
+          score_behavior: scores[2],
+          score_organization: scores[3],
+          score_continuation: scores[4],
+          total,
+          grade,
+          answers,
+        }),
+      });
+    } catch (e) {
+      console.error("保存に失敗しました", e);
+      // 保存に失敗しても診断結果の表示は続行する
+    }
+  };
+
   const setAnswer = (qi, v) =>
     setAnswers((prev) => {
       const next = [...prev];
@@ -300,7 +327,7 @@ export default function SkillCheck() {
                 disabled={!pageAnswered}
                 onClick={() => {
                   if (page < 4) { setPage(page + 1); window.scrollTo(0, 0); }
-                  else { setStep("report"); window.scrollTo(0, 0); }
+                  else { saveResult(); setStep("report"); window.scrollTo(0, 0); }
                 }}
                 style={{ ...primaryBtn, opacity: pageAnswered ? 1 : 0.4, cursor: pageAnswered ? "pointer" : "not-allowed", flex: 1 }}>
                 {page < 4 ? "次へ" : "結果を見る"}
